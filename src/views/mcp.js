@@ -106,8 +106,18 @@ export function renderMcpDetail(id) {
 
   // Tools
   wrap.append(sectionTitle("Exposed tools"));
-  if (allowed) wrap.append(el("p", { class: "muted", style: "margin:-4px 0 12px" },
-    "Policy ", el("b", {}, m.policy), " permits the read-only queries and denies the mutating tools."));
+  const muteCount = m.tools.filter((t) => t.kind === "mutate").length;
+  const denyCount = allowed ? muteCount : 0;
+  const allowCount = m.tools.length - denyCount;
+  wrap.append(el("div", { style: "display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-4px 0 12px" },
+    badge(`${allowCount} allowed`, "green", true),
+    denyCount ? badge(`${denyCount} denied`, "red") : null,
+    el("span", { class: "muted", style: "font-size:12.5px" },
+      allowed
+        ? el("span", {}, "Read-only queries allowed · mutators denied by ", el("b", {}, m.policy),
+            " — even a hijacked agent can look, not touch.")
+        : el("span", {}, "Governance is permissive — every tool is allowed. Scope it with a policy like ",
+            el("b", {}, "dhi-readonly"), " to deny the mutators."))));
   const toolTable = el("table", { class: "table" },
     el("thead", {}, el("tr", {}, el("th", {}, "Tool"), el("th", {}, "Kind"), el("th", {}, "Description"), el("th", {}, "Policy"))),
     el("tbody", {},
