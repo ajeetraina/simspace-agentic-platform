@@ -458,3 +458,35 @@ button { font-family: inherit; }
 .verdict .r .muted { display: block; margin-top: 3px; font-size: 12px; }
 .event-log { font-family: var(--mono); font-size: 11.5px; color: var(--text-muted); background: #f6f8fa; border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
 .event-log .ev-ok { color: var(--green); }
+
+/* ---------------- Guided tour ---------------- */
+.tour-caption {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+  width: min(720px, 94vw); background: rgba(11,16,32,.96); color: #e2e8f0;
+  border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.4); z-index: 3000;
+  padding: 16px 20px 14px; backdrop-filter: blur(6px); border: 1px solid #24304a;
+  animation: pop .18s ease-out;
+}
+.tour-caption .tc-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.tour-caption .tc-tag { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #38bdf8; display: flex; align-items: center; gap: 6px; }
+.tour-caption .tc-num { font-family: var(--mono); font-size: 12px; color: #94a3b8; }
+.tour-caption h4 { margin: 0 0 4px; font-size: 16px; color: #fff; }
+.tour-caption p { margin: 0; font-size: 13.5px; color: #cbd5e1; line-height: 1.5; }
+.tour-progress { height: 3px; background: #1e293b; border-radius: 2px; margin: 12px 0; overflow: hidden; }
+.tour-progress > i { display: block; height: 100%; background: var(--docker-blue); transition: width .35s ease; }
+.tour-controls { display: flex; align-items: center; gap: 8px; }
+.tour-controls .sp { flex: 1; }
+.tour-btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; cursor: pointer; }
+.tour-btn:hover { background: #273449; }
+.tour-btn.primary { background: var(--docker-blue); border-color: var(--docker-blue); color: #fff; }
+.tour-btn.primary:hover { background: #1b81d3; }
+.tour-btn:disabled { opacity: .4; cursor: not-allowed; }
+.tour-btn.ghost { background: transparent; border-color: transparent; color: #94a3b8; }
+.tour-btn.ghost:hover { color: #fff; background: #1e293b; }
+
+.tour-highlight {
+  outline: 3px solid var(--docker-blue) !important; outline-offset: 3px;
+  border-radius: 10px; box-shadow: 0 0 0 6px rgba(36,150,237,.22) !important;
+  transition: outline .2s, box-shadow .2s; scroll-margin: 90px;
+}
+[id^="team-"], #tour-compare, #tour-two-kinds { scroll-margin-top: 80px; }

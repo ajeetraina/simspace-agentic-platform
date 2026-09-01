@@ -9,6 +9,10 @@ import { navigate } from "../router.js";
 // (when we record the session at the end) shows the finished result, not a
 // blank form.
 let lastRun = null;
+let runId = 0; // supersedes an in-flight animation when a new submit starts
+
+// Let the guided tour force a clean form before driving a submission.
+export function resetEvaluate() { lastRun = null; }
 
 const SAMPLE = {
   name: "Wireless Ergonomic Keyboard",
@@ -74,7 +78,7 @@ export function renderEvaluate() {
 
   const pipe = el("div", { class: "pipe" });
 
-  const submitBtn = el("button", { class: "btn btn-primary", style: "width:100%;justify-content:center;margin-top:4px",
+  const submitBtn = el("button", { id: "eval-submit", class: "btn btn-primary", style: "width:100%;justify-content:center;margin-top:4px",
     onClick: run }, icon("play", "ico"), "Submit for evaluation");
 
   const form = el("div", { class: "eval-form panel", style: "padding:18px" },
@@ -85,8 +89,8 @@ export function renderEvaluate() {
     field("Description", description),
     submitBtn,
     el("div", { class: "quick" },
-      el("button", { class: "btn btn-sm", onClick: () => fill(SAMPLE) }, "Sample: strong"),
-      el("button", { class: "btn btn-sm", onClick: () => fill(WEAK) }, "Sample: weak")),
+      el("button", { id: "eval-strong", class: "btn btn-sm", onClick: () => fill(SAMPLE) }, "Sample: strong"),
+      el("button", { id: "eval-weak", class: "btn btn-sm", onClick: () => fill(WEAK) }, "Sample: weak")),
   );
 
   function fill(p) {
@@ -108,9 +112,8 @@ export function renderEvaluate() {
   async function run() {
     const p = product();
     if (!p.name) { toast("Product name required", "err"); return; }
-    submitBtn.disabled = true;
-    try { await animate(pipe, p); }
-    finally { submitBtn.disabled = false; }
+    const myId = ++runId;
+    await animate(pipe, p, () => myId === runId);
   }
 
   wrap.append(el("div", { class: "eval-wrap" }, form, pipe));
@@ -130,7 +133,7 @@ function statusPill(kind, text) {
     kind === "running" ? el("span", { class: "spin" }) : null, text);
 }
 
-async function animate(pipe, p) {
+async function animate(pipe, p, live = () => true) {
   pipe.replaceChildren();
   const result = score(p);
 
@@ -159,6 +162,7 @@ async function animate(pipe, p) {
     cards[a.key] = { card, body, setPill: (k, t) => card.querySelector(".status-pill").replaceWith(statusPill(k, t)) };
     grid.append(card);
   }
+  if (!live()) return;
   pipe.append(grid);
 
   // 1) vendor-intake — score breakdown builds up
@@ -207,6 +211,7 @@ async function animate(pipe, p) {
   }, !result.approved);
 
   // Verdict
+  if (!live()) return;
   const verdict = el("div", { class: "verdict " + (result.approved ? "pass" : "fail") },
     el("div", { class: "big" }, result.approved ? "APPROVED" : "REJECTED"),
     el("div", { class: "r" },
@@ -218,6 +223,7 @@ async function animate(pipe, p) {
       .map((e) => el("div", { class: "ev-ok" }, "✓ " + e))));
 
   // Record the run + session (single store write → re-render shows completed state)
+  if (!live()) return;
   const session = startSession(
     { id: "sbx-catalog", name: "catalog-pipeline", agent: "catalog-orchestrator", project: "catalog-service", mcp: ["docker-gateway"] },
     { prompt: `Evaluate submission: ${p.name} (${p.category}, $${p.price}).`, staticMcp: ["docker-gateway"] });

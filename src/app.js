@@ -19,6 +19,7 @@ import { renderSchedules } from "./views/schedules.js";
 import { renderTasks } from "./views/tasks.js";
 import { renderInteractive } from "./views/interactive.js";
 import { renderEvaluate } from "./views/evaluate.js";
+import { startTour, tourRequested } from "./tour.js";
 
 const NAV = [
   { group: "top", items: [
@@ -88,6 +89,7 @@ function renderShell(session) {
       ...NAV[1].items.map(makeItem),
     ),
     el("div", { class: "sidebar-foot" },
+      el("button", { class: "nav-item", onClick: startTour }, icon("play"), "Guided tour"),
       el("button", { class: "nav-item", onClick: openSettings }, icon("refresh"), "Demo data"),
     ),
   );
@@ -117,6 +119,9 @@ function renderShell(session) {
   const rerender = router.start(mount);
   // Re-render current view on any state change.
   subscribe(() => rerender());
+
+  // Auto-start the guided tour when the URL asks for it (?tour=1).
+  if (tourRequested()) setTimeout(startTour, 500);
 
   function openAccount() {
     modal({

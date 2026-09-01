@@ -48,7 +48,7 @@ export function renderDashboard() {
   wrap.append(el("div", { class: "card" }, flow));
 
   // Baseline vs hardened comparison
-  wrap.append(sectionTitle("catalog-service: what the agent shipped vs. what it should have"));
+  wrap.append(el("div", { id: "tour-compare" }, sectionTitle("catalog-service: what the agent shipped vs. what it should have")));
   const c = COMPARE;
   const compare = el("div", { class: "table-wrap" },
     el("table", { class: "table" },
@@ -70,7 +70,7 @@ export function renderDashboard() {
     el("a", { href: "#/sandboxes", onClick: () => navigate("sandboxes") }, "Go to Sandboxes →")));
 
   // Two kinds of agents, one governance model
-  wrap.append(sectionTitle("Two kinds of agents, one governance model"));
+  wrap.append(el("div", { id: "tour-two-kinds" }, sectionTitle("Two kinds of agents, one governance model")));
   const agentCard = (title, tagline, body, tone) => el("div", { class: "card link", onClick: () => navigate("agents"),
     style: `border-left:3px solid ${tone}` },
     el("div", { class: "card-title", style: "margin-bottom:4px" }, icon("bot", "ico"), title),

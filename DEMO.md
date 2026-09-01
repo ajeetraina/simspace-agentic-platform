@@ -7,6 +7,12 @@ the live app.
 > **Live:** https://agentic-platform.dockerworkshop.com
 > **Repo:** https://github.com/ajeetraina/simspace-agentic-platform
 
+> **🎬 Hands-free option:** click **Guided tour** in the sidebar (or open
+> [`?tour=1`](https://agentic-platform.dockerworkshop.com/?tour=1#/dashboard)) to auto-play
+> this entire story — including the live build and a live approve **and** reject — with
+> caption overlays. Perfect for screen-recording. Use **Pause / Back / Next** to drive it
+> manually, or narrate the manual walkthrough below.
+
 ---
 
 ## Before you start (30 sec)
