@@ -41,6 +41,7 @@ Sign in with any email (a value is pre-filled). Everything is simulated.
 ## The demo path (Product Catalog)
 
 The story mirrors the lab: the same agent, two environments.
+See **[DEMO.md](DEMO.md)** for a click-by-click, ~7–10 min presenter script.
 
 1. **Artifacts** → `catalog-service:baseline` — what the agent shipped
    *unsandboxed*: `node:20`, 431 packages, `0C · 8H · 41M · 93L`, unsigned,
