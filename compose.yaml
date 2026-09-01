@@ -1,0 +1,18 @@
+services:
+  # Live-editing preview: mounts the source read-only, edit files and refresh.
+  dev:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./assets:/usr/share/nginx/html/assets:ro
+      - ./src:/usr/share/nginx/html/src:ro
+
+  # Self-contained image (what you'd ship / deploy).
+  app:
+    build: .
+    ports:
+      - "8081:80"
+    profiles: ["build"]
