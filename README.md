@@ -66,7 +66,7 @@ The story mirrors the lab: the same agent, two environments.
 | **Policies** | Cedar (MCP access) + Scout (image/CI) policies; enforce/edit |
 | **Dashboard** | Posture overview + baseline-vs-hardened comparison |
 | **Sessions** | Agent runs, prompts, and the MCP tool calls they made |
-| **Agents** | codex · claude · copilot · gemini |
+| **Agents** | Portal-style teams with search/sort/filter/grid-list. **Development Team** (architect, implementer, orchestrator, sandbox-coder) + **Catalog Intelligence Team** — the Llama 3.2 / Model Runner product-evaluation agents (vendor-intake, market-research, customer-match, catalog-management, orchestrator) from [catalog-service-ai-enhanced](https://github.com/ajeetraina/catalog-service-ai-enhanced). Create Agent, run in sandbox, or run the catalog pipeline |
 | **Projects** | `catalog-service` (frontend, backend, Kafka, LocalStack, WireMock) |
 | **Artifacts** | Built images with CVEs, SBOM/provenance, signature, policy verdict |
 | **Schedules** | Cron jobs (rebuild, CVE scan, policy-drift check) |

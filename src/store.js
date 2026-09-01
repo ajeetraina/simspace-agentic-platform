@@ -4,7 +4,7 @@
 // github.com/ajeetraina/simspace-agentic-security so every view has data.
 // ---------------------------------------------------------------------------
 
-const KEY = "dap-sim-state-v1";
+const KEY = "dap-sim-state-v2";
 const SESSION_KEY = "dap-sim-session-v1";
 
 function seed() {
@@ -137,13 +137,68 @@ rule require-provenance { deny when not image.attestations.provenance }`,
     ],
 
     // -------------------------------------------------------------------
-    // Agents available to run inside sandboxes.
+    // Agent teams — configured agents grouped like the real portal.
+    // -------------------------------------------------------------------
+    teams: [
+      { id: "team-dev", name: "Development Team", tag: "development-team", updateAvailable: true,
+        desc: "Coding agents that design, implement and orchestrate work inside sandboxes." },
+      { id: "team-catalog", name: "Catalog Intelligence Team", tag: "catalog-intelligence", updateAvailable: false,
+        desc: "Multi-agent product-evaluation pipeline from catalog-service-ai-enhanced — intake, research, matching and catalog management." },
+    ],
+
+    // -------------------------------------------------------------------
+    // Agents. `kind: coding` agents are runnable in sandboxes; `kind: service`
+    // agents are the Llama-based catalog microservice agents.
     // -------------------------------------------------------------------
     agents: [
-      { id: "ag-codex", name: "codex", vendor: "OpenAI", desc: "Codex CLI coding agent", status: "available", default: true },
-      { id: "ag-claude", name: "claude", vendor: "Anthropic", desc: "Claude Code — claude -p one-shot & interactive", status: "available", default: false },
-      { id: "ag-copilot", name: "copilot", vendor: "GitHub", desc: "GitHub Copilot CLI agent", status: "available", default: false },
-      { id: "ag-gemini", name: "gemini", vendor: "Google", desc: "Gemini CLI agent", status: "available", default: false },
+      // ---- Development Team (mirrors the official portal) ----
+      { id: "ag-architect", name: "architect", team: "development-team", kind: "coding",
+        model: "Opus 4.8", color: "#2496ED", default: false,
+        desc: "Technical design and architecture specialist. Produces architecture decisions, design docs, and implementation plans. Embeds explorer and planner sub-agents.",
+        badges: ["Platform Default", "S2S", "Artifacts", "GitHub"],
+        tags: ["filesystem", "shell", "todo"], updated: "2026-05-12T09:00:00Z" },
+      { id: "ag-implementer", name: "implementer", team: "development-team", kind: "coding",
+        model: "Sonnet 4.6", color: "#1a7f37", default: true,
+        desc: "Implementation specialist. Handles coding, bug fixes, refactoring, and tests across any language or framework. Embeds an opus planner, and reports back to the orchestrator.",
+        badges: ["Platform Default", "S2S", "Artifacts", "GitHub"],
+        tags: ["filesystem", "shell", "todo"], updated: "2026-05-12T09:00:00Z" },
+      { id: "ag-orchestrator", name: "orchestrator", team: "development-team", kind: "coding",
+        model: "Sonnet 4.6", color: "#7c3aed", default: false,
+        desc: "Primary entry point for the development team. Routes requests to specialist agents via S2S, tracks progress, synthesises results, and returns a single answer.",
+        badges: ["Platform Default", "Customized", "S2S", "Artifacts", "GitHub"],
+        tags: ["filesystem", "shell", "todo"], updated: "2026-05-12T09:00:00Z" },
+      { id: "ag-sandbox-coder", name: "sandbox-coder", team: "development-team", kind: "coding",
+        model: "Sonnet 4.6", color: "#0ea5e9", default: false,
+        desc: "A coding agent with shell and filesystem access for sandbox experimentation and quick scripts.",
+        badges: ["S2S", "Artifacts"],
+        tags: ["filesystem", "shell"], updated: "2026-08-25T09:00:00Z" },
+
+      // ---- Catalog Intelligence Team (catalog-service-ai-enhanced) ----
+      { id: "ag-catalog-orch", name: "catalog-orchestrator", team: "catalog-intelligence", kind: "service",
+        model: "Sonnet 4.6", color: "#db2777", default: false,
+        desc: "Entry point for the catalog pipeline. Receives a product submission, fans out to intake, research, match and catalog agents, then synthesises an APPROVED / REJECTED decision.",
+        badges: ["Platform Default", "Customized", "S2S", "MCP Gateway"],
+        tags: ["mcp-gateway", "kafka", "todo"], updated: "2026-08-30T10:00:00Z" },
+      { id: "ag-vendor-intake", name: "vendor-intake", team: "catalog-intelligence", kind: "service",
+        model: "Llama 3.2 · Model Runner", color: "#d97706", default: false,
+        desc: "Evaluates vendor product submissions, scoring 0–100 across innovation & quality, market demand, description clarity, price and vendor credibility. ≥ 70 approves.",
+        badges: ["Model Runner", "MCP Gateway", "Artifacts"],
+        tags: ["model-runner", "postgres", "mongodb", "scoring"], updated: "2026-08-30T10:05:00Z" },
+      { id: "ag-market-research", name: "market-research", team: "catalog-intelligence", kind: "service",
+        model: "Llama 3.2 · Model Runner", color: "#0891b2", default: false,
+        desc: "Automated competitor analysis. Assesses the competitive landscape and market positioning for each submission and returns a market-potential score.",
+        badges: ["Model Runner", "S2S"],
+        tags: ["model-runner", "web-search", "kafka"], updated: "2026-08-30T10:06:00Z" },
+      { id: "ag-customer-match", name: "customer-match", team: "catalog-intelligence", kind: "service",
+        model: "Llama 3.2 · Model Runner", color: "#4f46e5", default: false,
+        desc: "Matches products to customer preferences and demographic segments, producing alignment scores per segment.",
+        badges: ["Model Runner", "S2S"],
+        tags: ["model-runner", "postgres"], updated: "2026-08-30T10:07:00Z" },
+      { id: "ag-catalog-mgmt", name: "catalog-management", team: "catalog-intelligence", kind: "service",
+        model: "Llama 3.2 · Model Runner", color: "#059669", default: false,
+        desc: "Writes approved products to the PostgreSQL catalog, records evaluation history in MongoDB, and publishes events to the product-evaluations Kafka topic.",
+        badges: ["Model Runner", "MCP Gateway"],
+        tags: ["postgres", "mongodb", "kafka"], updated: "2026-08-30T10:08:00Z" },
     ],
 
     // -------------------------------------------------------------------

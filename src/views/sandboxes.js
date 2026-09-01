@@ -45,14 +45,15 @@ export function renderSandboxes() {
   return wrap;
 }
 
-export function openNewSandbox() {
-  const agents = getCol("agents");
+export function openNewSandbox(preselect) {
+  const agents = getCol("agents").filter((a) => a.kind === "coding");
   const projects = getCol("projects");
   const mcpServers = getCol("mcpServers");
   const policies = getCol("policies").filter((p) => p.target === "MCP access");
 
+  const defaultAgent = preselect || (agents.find((a) => a.default) || agents[0])?.name;
   const name = input({ value: "catalog-sandbox" });
-  const agentSel = select(agents.map((a) => ({ value: a.name, label: `${a.name} — ${a.vendor}` })), { value: "codex" });
+  const agentSel = select(agents.map((a) => ({ value: a.name, label: `${a.name} — ${a.model}` })), { value: defaultAgent });
   const projectSel = select(projects.map((p) => ({ value: p.name, label: p.name })), { value: projects[0]?.name });
   const policySel = select(policies.map((p) => ({ value: p.name, label: `${p.name} (${p.mode})` })), { value: "dhi-readonly" });
 

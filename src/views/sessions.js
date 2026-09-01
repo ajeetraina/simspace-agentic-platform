@@ -60,12 +60,15 @@ export function renderSessionDetail(id) {
   }
 
   if (s.toolCalls?.length) {
-    wrap.append(sectionTitle("Tool calls (via DHI MCP server)"));
+    const isDhi = (s.mcp || []).includes("remotedhi");
+    wrap.append(sectionTitle("Tool calls " + (isDhi ? "(via DHI MCP server)" : "(via MCP gateway)")));
     wrap.append(el("div", { class: "panel", style: "padding:14px 18px" },
       ...s.toolCalls.map((t) => el("div", { style: "padding:5px 0;border-bottom:1px solid var(--border)" },
         icon("check", "ico"), " ", el("span", { class: "mono" }, t)))));
     wrap.append(el("p", { class: "muted", style: "margin-top:10px" },
-      "The agent queried the hardened catalog before writing FROM — reading signed CVE evidence rather than pattern-matching a base image."));
+      isDhi
+        ? "The agent queried the hardened catalog before writing FROM — reading signed CVE evidence rather than pattern-matching a base image."
+        : "The agent ran locally via Docker Model Runner (Llama 3.2), calling tools through the MCP gateway — evaluation history in MongoDB, catalog writes to PostgreSQL, events to Kafka."));
   }
   return wrap;
 }

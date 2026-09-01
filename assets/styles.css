@@ -349,3 +349,54 @@ button { font-family: inherit; }
 .flow-diagram .node { padding:6px 12px; border-radius:8px; border:1px solid var(--border-strong); background:#fff; }
 .flow-diagram .node.on { background:#eaf3fd; border-color:var(--docker-blue); color:var(--docker-blue); font-weight:600; }
 .flow-diagram .arr { color: var(--text-faint); }
+
+/* ---------------- Agents view ---------------- */
+.toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
+.toolbar .search-box { position: relative; flex: 1; min-width: 200px; }
+.toolbar .search-box .ico { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-faint); }
+.toolbar .search-box .input { padding-left: 34px; }
+.toolbar .tb-label { font-size: 12.5px; color: var(--text-muted); margin: 0 2px 0 6px; }
+.toolbar .select { width: auto; padding: 7px 28px 7px 11px; }
+.seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; }
+.seg button { border: none; background: #fff; padding: 7px 9px; cursor: pointer; color: var(--text-muted); display: flex; }
+.seg button + button { border-left: 1px solid var(--border-strong); }
+.seg button.on { background: #eaf3fd; color: var(--docker-blue); }
+
+.team-head { display: flex; align-items: center; gap: 10px; margin: 26px 0 14px; }
+.team-head .t-name { font-weight: 650; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.team-head .t-desc { color: var(--text-muted); font-size: 12.5px; }
+
+.agent-av {
+  width: 44px; height: 44px; border-radius: 12px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; color: #fff;
+}
+.agent-card { display: flex; flex-direction: column; padding: 16px 16px 12px; gap: 0; }
+.agent-card .ac-top { display: flex; gap: 12px; align-items: flex-start; }
+.agent-card .ac-name { font-weight: 650; font-size: 15px; }
+.agent-card .ac-model { color: var(--text-muted); font-size: 12.5px; display: flex; align-items: center; gap: 5px; margin-top: 1px; }
+.agent-card .ac-model .m { width: 13px; height: 13px; }
+.agent-card .ac-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.agent-card .ac-desc { color: var(--text); font-size: 13px; margin: 12px 0 0; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.agent-card .ac-caps { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.agent-card .ac-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 11px; border-top: 1px solid var(--border); }
+.agent-card .ac-foot .date { font-family: var(--mono); font-size: 11.5px; color: var(--text-faint); }
+.agent-card .ac-foot .acts { display: flex; gap: 4px; }
+
+.badge-xs { padding: 1px 7px; font-size: 10.5px; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+.badge-xs.default { color: var(--docker-blue); background: #eaf3fd; }
+.badge-xs.custom { color: #7c3aed; background: #f3ecff; }
+.badge-xs.plain { color: var(--text-muted); background: #eef1f5; border: 1px solid var(--border); }
+
+.cap { padding: 2px 9px; font-size: 11.5px; border-radius: 999px; background: #eef1f5; color: var(--text-muted); font-weight: 500; }
+.cap.team { color: var(--docker-blue); background: #eaf3fd; }
+
+.icon-btn { width: 30px; height: 30px; border-radius: 7px; border: 1px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.icon-btn:hover { background: #eef1f5; color: var(--text); }
+.icon-btn.run:hover { background: #eaf3fd; color: var(--docker-blue); }
+
+.agent-row { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.agent-row:last-child { border-bottom: none; }
+.agent-row .ar-main { flex: 1; min-width: 0; }
+.agent-row .ar-desc { color: var(--text-muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
