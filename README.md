@@ -126,3 +126,49 @@ Point at the red "policy fail" panel. This is your villain.
 3. The governance you put in place (75s)
 - MCP → remotedhi: "We register the DHI MCP server — signed, read-only catalog queries. Notice the two mirror-mutator tools are denied."
 - Policies → dhi-readonly: "A Cedar policy enforces exactly that — the agent can read the hardened catalog, not mutate it."
+
+Explanation: The DHI MCP server exposes two kinds of tools
+
+When you register remotedhi, the agent gets a set of tools. They fall into two buckets:
+
+Read-only (query) tools — just ask questions about Docker's Hardened Images catalog:
+- dhi_get_image_cves — "what CVEs does node:24-debian13 have?"
+- dhi_list_repositories, dhi_get_image_packages, dhi_get_image_attestations, dhi_get_tag_definition …
+
+These only read. They return information. They change nothing.
+
+Mutating tools — actually change infrastructure:
+- dhi_create_mirror — create a mirror (a redirect/copy of a repository to another registry)
+- dhi_remove_mirror — delete one
+
+These write/mutate. They alter where hardened images come from.
+
+"Read the catalog, not mutate it" = give it only the query tools
+
+The agent's legitimate job is: before writing FROM, look up a good base image — check its CVEs, confirm it's signed, see its packages. That's all reading.
+
+It has no reason to create or delete a mirror. So the dhi-readonly Cedar policy grants exactly the read tools and denies the two mutators:
+
+```
+permit (principal, action == MCP::Action::"invokeTool", resource)
+when {
+  resource.server == "remotedhi" &&
+  ["dhi_get_image_cves","dhi_get_image_details", ...   //
+   "dhi_list_repositories","dhi_list_mirrors"].contains(resource.tool)
+};
+```
+
+Because dhi_create_mirror / dhi_remove_mirror aren't in ths denied.
+
+### Why this is the point (not just a nice-to-have)
+
+This is least privilege applied to an AI agent. The scary pt-injected — a malicious product description, a poisoneddependency, whatever — and tries to do something harmful. If it could call dhi_create_mirror, it could redirect your "hardened" base image to a registry an attacker controls → a supply-chain compromise
+
+With the scoped policy, even a fully hijacked agent can ont can do with the DHI server is read CVE data. It literallycannot mutate your image sourcing, because those tools are off the table — enforced by policy, not by trusting the agent to behave.
+
+▎ The soundbite for your demo: "The agent needs to read the catalog to pick a safe base — it never needs to write to it. So we grant read, deny
+▎ write. Even a compromised agent can only look, not touch
+
+### Where to show it live
+
+Go to MCP → remotedhi: the tool table marks the read toolste_mirror / dhi_remove_mirror denied (red). That red/greensplit is this policy in action — a great visual for that beat of the talk.   
