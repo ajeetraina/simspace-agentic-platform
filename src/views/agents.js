@@ -79,10 +79,14 @@ export function renderAgents() {
     for (const team of showTeams) {
       const members = filtered.filter((a) => a.team === team.tag);
       if (!members.length) continue;
-      container.append(el("div", { class: "team-head" },
+      container.append(el("div", { class: "team-head", id: "team-" + team.tag },
         el("span", { class: "t-name" }, icon("users"), team.name),
         team.updateAvailable ? badge("Update available", "blue", false) : null,
-        el("span", { class: "t-desc" }, team.desc)));
+        el("span", { class: "t-desc" }, team.desc),
+        team.tag === "catalog-intelligence"
+          ? el("button", { class: "btn btn-sm btn-primary", style: "margin-left:auto", onClick: () => navigate("evaluate") },
+              icon("play"), "Submit a product")
+          : null));
       container.append(viewMode === "grid"
         ? el("div", { class: "grid grid-cards" }, ...members.map(agentCard))
         : el("div", { class: "table-wrap" }, ...members.map(agentRow)));
@@ -162,6 +166,7 @@ function agentRow(a) {
 // ---- Actions ----
 function runAgent(a) {
   if (a.kind === "coding") { openNewSandbox(a.name); return; }
+  if (a.name === "catalog-orchestrator") { navigate("evaluate"); return; }
   // Service agent → simulate a catalog-pipeline run as a session.
   const session = startSession(
     { id: "sbx-catalog", name: "catalog-pipeline", agent: a.name, project: "catalog-service", mcp: ["docker-gateway"] },

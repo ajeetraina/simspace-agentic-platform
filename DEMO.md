@@ -76,9 +76,23 @@ Go to **Agents**.
 > Team** is the multi-agent product-evaluation pipeline — Llama 3.2 on Docker Model
 > Runner, from the `catalog-service-ai-enhanced` project."
 
-Hit **▶ Run** on **`vendor-intake`** → show the pipeline session:
-*score 87/100 → APPROVED → MongoDB → Kafka.* Mention `catalog-orchestrator` fans
-out to all four specialist agents.
+Click **Submit a product** (on the Catalog Intelligence Team header, or **▶** on
+`catalog-orchestrator`) to open the **live Product Evaluation**.
+
+> "Let's add a product and watch the team decide. Same pre-filled sample — hit Submit."
+
+Watch the fan-out animate: `catalog-orchestrator` receives → four agents light up →
+`vendor-intake` builds a score breakdown (**~91/100 → APPROVED**), `market-research`
+and `customer-match` add signal, `catalog-management` **commits to PostgreSQL ·
+MongoDB · Kafka**. Then the green **APPROVED** banner.
+
+**The kicker — trigger a live REJECT:** click **Sample: weak** → **Submit**. Same
+pipeline, but `vendor-intake` scores it **40/100**, `catalog-management` shows
+**skipped / not committed**, and the banner turns red: **REJECTED**.
+
+> "The scoring is real and reacts to the input — a $899 cable with a one-line
+> description fails on clarity and price. The agents made the call, and every step is
+> audited. That's the point: agents making business decisions, governed and logged."
 
 ### 8. Close · 20s
 Flash **Schedules** (nightly rebuild, CVE scan) and **Tasks** (kanban).

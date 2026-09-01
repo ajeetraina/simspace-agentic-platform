@@ -18,6 +18,7 @@ import { renderArtifacts, renderArtifactDetail } from "./views/artifacts.js";
 import { renderSchedules } from "./views/schedules.js";
 import { renderTasks } from "./views/tasks.js";
 import { renderInteractive } from "./views/interactive.js";
+import { renderEvaluate } from "./views/evaluate.js";
 
 const NAV = [
   { group: "top", items: [
@@ -42,6 +43,7 @@ const TITLES = {
   sandboxes: "Sandboxes", mcp: "MCP", secrets: "Secrets", policies: "Policies",
   dashboard: "Dashboard", sessions: "Sessions", agents: "Agents", projects: "Projects",
   artifacts: "Artifacts", schedules: "Schedules", tasks: "Tasks", interactive: "Interactive",
+  evaluate: "Product Evaluation",
 };
 
 // Register routes
@@ -57,6 +59,7 @@ router.route("artifacts", ({ id }) => id ? renderArtifactDetail(id) : renderArti
 router.route("schedules", renderSchedules);
 router.route("tasks", renderTasks);
 router.route("interactive", renderInteractive);
+router.route("evaluate", renderEvaluate);
 router.setNotFound(() => el("div", { class: "content" }, el("div", { class: "empty" }, "Page not found")));
 
 const app = document.getElementById("app");

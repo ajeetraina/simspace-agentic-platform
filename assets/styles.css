@@ -400,3 +400,61 @@ button { font-family: inherit; }
 .agent-row:last-child { border-bottom: none; }
 .agent-row .ar-main { flex: 1; min-width: 0; }
 .agent-row .ar-desc { color: var(--text-muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------------- Live Product Evaluation ---------------- */
+.eval-wrap { display: grid; grid-template-columns: 340px 1fr; gap: 22px; align-items: start; }
+@media (max-width: 900px) { .eval-wrap { grid-template-columns: 1fr; } }
+.eval-form { position: sticky; top: 76px; }
+.eval-form .quick { display: flex; gap: 8px; margin-top: 4px; }
+.eval-form .quick .btn { flex: 1; justify-content: center; }
+
+.pipe { display: flex; flex-direction: column; gap: 12px; }
+.pipe-idle { text-align: center; color: var(--text-muted); padding: 50px 20px; }
+.pipe-idle .big { font-size: 30px; margin-bottom: 8px; }
+
+.orch-node {
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+  border: 1px solid var(--indigo); background: var(--indigo-bg); border-radius: 10px;
+}
+.orch-node .av { width: 36px; height: 36px; border-radius: 9px; background: #db2777; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.orch-node .t { font-weight: 650; }
+.orch-node .s { font-size: 12px; color: var(--text-muted); }
+.fan-line { text-align: center; color: var(--text-faint); font-size: 18px; line-height: 1; margin: -4px 0; }
+
+.eval-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 620px) { .eval-grid { grid-template-columns: 1fr; } }
+.eval-card { border: 1px solid var(--border); border-radius: 10px; padding: 13px 14px; background: #fff; box-shadow: var(--shadow); transition: border-color .25s, box-shadow .25s; }
+.eval-card.active { border-color: var(--docker-blue); box-shadow: 0 0 0 3px rgba(36,150,237,.15); }
+.eval-card.done { border-color: #b7dfc2; }
+.eval-card .ec-head { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.eval-card .ec-av { width: 26px; height: 26px; border-radius: 7px; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+.eval-card .ec-name { font-weight: 600; font-size: 13px; flex: 1; }
+.eval-card .ec-body { font-size: 12.5px; color: var(--text-muted); min-height: 18px; }
+.eval-card .ec-body b { color: var(--text); }
+
+.status-pill { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; display: inline-flex; align-items: center; gap: 5px; }
+.status-pill.queued { background: #eef1f5; color: var(--text-faint); }
+.status-pill.running { background: #eaf3fd; color: var(--docker-blue); }
+.status-pill.done { background: var(--green-bg); color: var(--green); }
+.status-pill.skip { background: #eef1f5; color: var(--text-muted); }
+.status-pill .spin { border-color: rgba(36,150,237,.35); border-top-color: var(--docker-blue); }
+
+.score-bars { display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
+.score-row { display: grid; grid-template-columns: 90px 1fr 34px; align-items: center; gap: 8px; font-size: 11px; }
+.score-row .lab { color: var(--text-muted); }
+.score-row .track { height: 6px; background: #eef1f5; border-radius: 4px; overflow: hidden; }
+.score-row .fill { height: 100%; width: 0; border-radius: 4px; background: var(--docker-blue); transition: width .6s ease; }
+.score-row .val { text-align: right; font-family: var(--mono); color: var(--text); }
+.score-total { display: flex; align-items: baseline; gap: 6px; margin-top: 8px; font-family: var(--mono); }
+.score-total .n { font-size: 22px; font-weight: 700; }
+.score-total .n.pass { color: var(--green); } .score-total .n.fail { color: var(--red); }
+
+.verdict { border-radius: 12px; padding: 18px 20px; display: flex; align-items: center; gap: 16px; margin-top: 4px; }
+.verdict.pass { background: var(--green-bg); border: 1px solid #b7dfc2; }
+.verdict.fail { background: var(--red-bg); border: 1px solid #f3c9c4; }
+.verdict .big { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+.verdict.pass .big { color: var(--green); } .verdict.fail .big { color: var(--red); }
+.verdict .r { font-size: 13px; color: var(--text); }
+.verdict .r .muted { display: block; margin-top: 3px; font-size: 12px; }
+.event-log { font-family: var(--mono); font-size: 11.5px; color: var(--text-muted); background: #f6f8fa; border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+.event-log .ev-ok { color: var(--green); }
