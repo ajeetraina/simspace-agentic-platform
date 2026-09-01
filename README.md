@@ -1,4 +1,4 @@
-# Docker Agentic Platform — Simulation
+# Docker Agentic Platform ~ Simulation
 
 A pixel-faithful, fully interactive **simulation** of the
 [Docker Agentic Platform](https://agentic-platform.docker.com/) portal —
