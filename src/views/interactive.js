@@ -37,6 +37,11 @@ const GROUPS = [
     "docker scout compare --to catalog-service:baseline catalog-service:dhi",
     "docker scout policy catalog-service:dhi",
   ] },
+  { title: "Kits · compose the sandbox", cmds: [
+    "sbx kit ls",
+    "sbx kit inspect dhi-mcp",
+    "sbx kit add dhi-mcp",
+  ] },
 ];
 
 export function renderInteractive() {

@@ -261,6 +261,8 @@ function sbxCommand(parts, cmd) {
     };
   }
 
+  if (sub === "kit") return sbxKit(parts);
+
   if (sub === "env" && parts[2] === "run") return sbxEnvRun();
   if (sub === "env" && parts[2] === "rm")
     return { lines: [ok("Tore down sandbox 'catalog-sandbox' — microVM and workspace destroyed.")] };
@@ -292,6 +294,45 @@ function sbxAgentBuild(cmd) {
       startSession(sbx, { prompt: "Containerise catalog-service for production. Choose a hardened base image, keep the final image shell-free, and attach an SBOM.", staticMcp: ["remotedhi"] });
     },
   };
+}
+
+function sbxKit(parts) {
+  const action = parts[2];
+  const kits = getCol("kits");
+  if (action === "ls" || !action) {
+    return {
+      lines: [
+        L("NAME             KIND      VERSION  SOURCE"),
+        ...kits.map((k) => L(`${k.name.padEnd(16)} ${k.kind.padEnd(9)} ${("v" + k.version).padEnd(8)} ${k.source.slice(0, 44)}`)),
+        L(""),
+        dim(`${kits.length} kits available. Inspect one: sbx kit inspect <name>`),
+      ],
+    };
+  }
+  if (action === "inspect") {
+    const k = kits.find((x) => x.name === parts[3]);
+    if (!k) return { lines: [err("kit not found: " + (parts[3] || "")), dim("List them: sbx kit ls")] };
+    return { lines: [dim(`# ${k.source}`), ...k.spec.split("\n").map((t) => L(t))] };
+  }
+  if (action === "add") {
+    const k = kits.find((x) => x.name === parts[3]);
+    if (!k) return { lines: [err("kit not found: " + (parts[3] || ""))] };
+    const w = k.wires || {};
+    return {
+      lines: [
+        ok(`Added kit '${k.name}' (${k.kind}) — composed into the sandbox`),
+        ...(w.mcp ? [dim("  + MCP servers: " + w.mcp.join(", "))] : []),
+        ...(w.policy ? [dim("  + governance profile: " + w.policy)] : []),
+        ...(w.credentials ? [dim("  + credentials: " + w.credentials.join(", "))] : []),
+        ...(w.network ? [dim("  + network allow: " + w.network.join(", "))] : []),
+      ],
+    };
+  }
+  if (action === "push" || action === "pull") {
+    return { lines: [ok(`${action === "push" ? "Pushed" : "Pulled"} kit ${parts[3] || ""} — pinned by digest.`)] };
+  }
+  if (action === "validate") return { lines: [ok("spec.yaml is valid (schemaVersion \"2\").")] };
+  return { lines: [err("usage: sbx kit ls | inspect <name> | add <name> | validate | push | pull")] };
 }
 
 function sbxEnvRun() {

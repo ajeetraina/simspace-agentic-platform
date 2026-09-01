@@ -72,7 +72,18 @@ See **[DEMO.md](DEMO.md)** for a click-by-click, ~7–10 min presenter script.
 | **Artifacts** | Built images with CVEs, SBOM/provenance, signature, policy verdict |
 | **Schedules** | Cron jobs (rebuild, CVE scan, policy-drift check) |
 | **Tasks** | Kanban of supply-chain work items |
-| **Interactive** | Simulated `sbx` / `docker scout` shell |
+| **Interactive** | Simulated `sbx` / `docker scout` shell (incl. `sbx kit ls/inspect/add`) |
+
+Two experiences live off-nav (reachable by button/link, like the real product's
+CLI/declarative layers):
+
+- **Kits** (`#/kits`) — declarative sbx artifacts (`spec.yaml`): `kind: sandbox`
+  agent kits + `kind: mixin` add-ons (`dhi-mcp`, `node-toolchain`, `docker-build`,
+  `deny-all-net`). Shows how a kit **composes** the Sandbox / MCP / Secrets / Policy
+  primitives. "Compose from kits" is wired into **New sandbox**, and the sandbox's
+  `.sbxenv.yaml` renders the resulting `kit:` + `mixins:`.
+- **Product Evaluation** (`#/evaluate`) — submit a product, watch the Catalog
+  Intelligence agents score it live.
 
 ## Project layout
 

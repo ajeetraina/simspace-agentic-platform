@@ -12,7 +12,10 @@ export function renderSandboxes() {
     pageHead(
       "Sandboxes",
       "Sandboxes are isolated microVMs where your agents do their work. See everything running or stopped, track status, or open one to pick up where you left off.",
-      el("button", { class: "btn btn-primary", onClick: openNewSandbox }, icon("plus"), "New sandbox"),
+      [
+        el("button", { class: "btn", onClick: () => navigate("kits") }, icon("box"), "Browse kits"),
+        el("button", { class: "btn btn-primary", onClick: () => openNewSandbox() }, icon("plus"), "New sandbox"),
+      ],
     ),
   );
 
@@ -45,11 +48,12 @@ export function renderSandboxes() {
   return wrap;
 }
 
-export function openNewSandbox(preselect) {
+export function openNewSandbox(preselect, presetKits) {
   const agents = getCol("agents").filter((a) => a.kind === "coding");
   const projects = getCol("projects");
   const mcpServers = getCol("mcpServers");
   const policies = getCol("policies").filter((p) => p.target === "MCP access");
+  const mixinKits = getCol("kits").filter((k) => k.kind === "mixin");
 
   const defaultAgent = preselect || (agents.find((a) => a.default) || agents[0])?.name;
   const name = input({ value: "catalog-sandbox" });
@@ -64,10 +68,29 @@ export function openNewSandbox(preselect) {
       el("div", {}, el("div", { class: "t" }, m.name), el("div", { class: "d" }, m.type + " · " + m.url))) };
   });
 
+  // Compose from mixin kits — checking one auto-wires the MCP servers and
+  // policy it declares, showing kit → primitive composition.
+  const defaultKits = presetKits || ["dhi-mcp"];
+  const applyKit = (k, on) => {
+    if (!on) return;
+    (k.wires.mcp || []).forEach((n) => { const c = mcpChoices.find((x) => x.cb.value === n); if (c) c.cb.checked = true; });
+    if (k.wires.policy) policySel.value = k.wires.policy;
+  };
+  const kitChoices = mixinKits.map((k) => {
+    const cb = el("input", { type: "checkbox", checked: defaultKits.includes(k.name), value: k.name });
+    cb.addEventListener("change", () => applyKit(k, cb.checked));
+    return { k, cb, node: el("label", { class: "radio-card", style: "cursor:pointer" }, cb,
+      el("div", {}, el("div", { class: "t mono" }, k.name), el("div", { class: "d" }, k.desc.slice(0, 52) + "…"))) };
+  });
+
   const body = el("div", {},
     field("Name", name),
-    field("Agent", agentSel, "The coding agent that runs inside the microVM."),
+    field("Agent (sandbox kit)", agentSel, "The coding agent that runs inside the microVM — its sandbox kit."),
     field("Workspace (project)", projectSel, "Cloned read-write into the sandbox; your host stays read-only."),
+    field(
+      el("span", {}, "Compose from kits (mixins) ", el("a", { href: "#/kits", style: "font-weight:400", onClick: (e) => { e.preventDefault(); navigate("kits"); } }, "browse all →")),
+      el("div", { class: "radio-cards" }, ...kitChoices.map((c) => c.node)),
+      "Each mixin wires in MCP servers, credentials, network rules and setup — checking one auto-selects what it declares below."),
     field("MCP servers", el("div", { class: "radio-cards" }, ...mcpChoices.map((c) => c.node)),
       "Tools the sandboxed agent may reach, governed by the policy below."),
     field("Governance profile", policySel, "Cedar policy enforced over register / invokeTool / invokePrimordial."),
@@ -83,12 +106,13 @@ export function openNewSandbox(preselect) {
       const nm = name.value.trim();
       if (!nm) { toast("Name is required", "err"); return false; }
       const mcp = mcpChoices.filter((c) => c.cb.checked).map((c) => c.cb.value);
+      const kits = kitChoices.filter((c) => c.cb.checked).map((c) => c.cb.value);
       const id = uid("sbx");
       nextCount("sandbox");
       add("sandboxes", {
         id, name: nm, agent: agentSel.value, project: projectSel.value,
         workspace: projectSel.value, base: "dhi.io/node (queried via MCP)",
-        mcp, policy: policySel.value, status: "starting",
+        mcp, kits, policy: policySel.value, status: "starting",
         started: new Date().toISOString(), vcpu: 4, memory: "8 GB", disk: "20 GB",
         built: false,
       });
@@ -141,6 +165,9 @@ export function renderSandboxDetail(id) {
       el("dt", {}, "Resources"), el("dd", {}, `${s.vcpu} vCPU · ${s.memory} RAM · ${s.disk} disk`),
       el("dt", {}, "Network"), el("dd", {}, "isolated · egress via MCP gateway"),
       el("dt", {}, "Host mount"), el("dd", {}, badge("read-only", "gray")),
+      el("dt", {}, "Composed from"), el("dd", {}, el("span", { class: "mono" }, s.agent),
+        ...((s.kits || []).map((k) => el("a", { href: "#/kits", style: "margin-left:6px", onClick: (e) => { e.preventDefault(); navigate("kits"); } },
+          el("span", { class: "tool-pill", style: "cursor:pointer" }, "+ " + k))))),
       el("dt", {}, "Started"), el("dd", {}, fmtDate(s.started)),
     ));
 
@@ -180,9 +207,15 @@ export function renderSandboxDetail(id) {
 }
 
 function sbxEnvFile(s) {
-  return `schemaVersion: "1"
+  const mixins = (s.kits && s.kits.length)
+    ? "\n" + s.kits.map((k) => `  - ${k}`).join("\n")
+    : " []";
+  return `schemaVersion: "2"
 name: ${s.name}
-agent: ${s.agent}
+
+# Base sandbox kit (the agent) + composed mixin kits.
+kit: ${s.agent}
+mixins:${mixins}
 
 workspace:
   path: ${s.workspace}

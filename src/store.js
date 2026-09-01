@@ -4,7 +4,7 @@
 // github.com/ajeetraina/simspace-agentic-security so every view has data.
 // ---------------------------------------------------------------------------
 
-const KEY = "dap-sim-state-v2";
+const KEY = "dap-sim-state-v3";
 const SESSION_KEY = "dap-sim-session-v1";
 
 function seed() {
@@ -199,6 +199,114 @@ rule require-provenance { deny when not image.attestations.provenance }`,
         desc: "Writes approved products to the PostgreSQL catalog, records evaluation history in MongoDB, and publishes events to the product-evaluations Kafka topic.",
         badges: ["Model Runner", "MCP Gateway"],
         tags: ["postgres", "mongodb", "kafka"], updated: "2026-08-30T10:08:00Z" },
+    ],
+
+    // -------------------------------------------------------------------
+    // Kits — declarative sbx artifacts (spec.yaml) that compose a sandbox.
+    // `kind: sandbox` = agent environment; `kind: mixin` = layered add-on.
+    // Kits are the reusable *source*; Sandboxes/MCP/Secrets/Policies are the
+    // primitives they wire in.
+    // -------------------------------------------------------------------
+    kits: [
+      { id: "kit-codex", name: "codex", kind: "sandbox", version: "1.4.0", locked: true,
+        source: "oci://docker.io/sbx/codex@sha256:9f2a1c7e", image: "docker.io/sbx/codex-image:latest",
+        desc: "OpenAI Codex CLI agent in an isolated microVM.",
+        wires: { agent: "codex", credentials: ["OPENAI_API_KEY"] },
+        spec: `schemaVersion: "2"
+kind: sandbox
+name: codex
+sandbox:
+  image: docker.io/sbx/codex-image:latest
+  command: ["codex"]
+agentInstructions:
+  filename: AGENTS.md
+  content: |
+    You are Codex, running inside an isolated sandbox microVM.
+credentials:
+  - service: openai
+    scheme: apiKey
+    env: OPENAI_API_KEY` },
+
+      { id: "kit-claude", name: "claude", kind: "sandbox", version: "1.6.0", locked: true,
+        source: "oci://docker.io/sbx/claude@sha256:3b1c8d04", image: "docker.io/sbx/claude-image:latest",
+        desc: "Anthropic Claude Code agent — claude -p one-shot and interactive.",
+        wires: { agent: "claude", credentials: ["ANTHROPIC_API_KEY"] },
+        spec: `schemaVersion: "2"
+kind: sandbox
+name: claude
+sandbox:
+  image: docker.io/sbx/claude-image:latest
+  command: ["claude"]
+credentials:
+  - service: anthropic
+    scheme: apiKey
+    env: ANTHROPIC_API_KEY` },
+
+      { id: "kit-dhi", name: "dhi-mcp", kind: "mixin", version: "2.1.0", locked: true,
+        source: "oci://docker.io/sbx/dhi-mcp@sha256:7e4b9a1f",
+        desc: "Wires the Docker Hardened Images MCP server, scopes it with the dhi-readonly Cedar policy, and injects the DHI token.",
+        wires: { mcp: ["remotedhi"], policy: "dhi-readonly", credentials: ["DHI_TOKEN"], network: ["dhi.io", "gateway.docker.com"] },
+        spec: `schemaVersion: "2"
+kind: mixin
+name: dhi-mcp
+permissions:
+  network:
+    allow:
+      - dhi.io
+      - gateway.docker.com
+credentials:
+  - service: dhi
+    scheme: apiKey
+    env: DHI_TOKEN
+environment:
+  SBX_MCP_PROFILE: dhi-readonly     # Cedar policy: read-only DHI tools
+setup:
+  startup:
+    - sbx mcp add remotedhi --url https://dhi.io/mcp` },
+
+      { id: "kit-node", name: "node-toolchain", kind: "mixin", version: "1.2.3", locked: true,
+        source: "git+https://github.com/sbx-kits/node-toolchain#a9d0e42",
+        desc: "Installs Node.js 20 + npm and common build tooling into the sandbox.",
+        wires: { setup: ["node20", "npm"] },
+        spec: `schemaVersion: "2"
+kind: mixin
+name: node-toolchain
+setup:
+  install:
+    - apt-get update && apt-get install -y nodejs npm
+  files:
+    - path: /etc/npmrc
+      content: "audit=false"` },
+
+      { id: "kit-registry", name: "docker-build", kind: "mixin", version: "1.3.0", locked: true,
+        source: "oci://docker.io/sbx/docker-build@sha256:5c6d0e2a",
+        desc: "Sandboxed Docker daemon plus push access to the internal registry.",
+        wires: { credentials: ["REGISTRY_PASSWORD"], network: ["registry.dockerlabs.xyz"], ports: [2375] },
+        spec: `schemaVersion: "2"
+kind: mixin
+name: docker-build
+permissions:
+  network:
+    allow:
+      - registry.dockerlabs.xyz
+ports:
+  - 2375
+credentials:
+  - service: registry
+    scheme: apiKey
+    env: REGISTRY_PASSWORD` },
+
+      { id: "kit-denyall", name: "deny-all-net", kind: "mixin", version: "1.0.1", locked: true,
+        source: "oci://docker.io/sbx/deny-all-net@sha256:1a2b3c4d",
+        desc: "Zero-egress baseline: denies all network so every allow rule must be added explicitly by another kit.",
+        wires: { network: ["(deny all)"] },
+        spec: `schemaVersion: "2"
+kind: mixin
+name: deny-all-net
+permissions:
+  network:
+    default: deny
+    allow: []` },
     ],
 
     // -------------------------------------------------------------------

@@ -19,6 +19,7 @@ import { renderSchedules } from "./views/schedules.js";
 import { renderTasks } from "./views/tasks.js";
 import { renderInteractive } from "./views/interactive.js";
 import { renderEvaluate } from "./views/evaluate.js";
+import { renderKits, renderKitDetail } from "./views/kits.js";
 import { startTour, tourRequested } from "./tour.js";
 
 const NAV = [
@@ -44,7 +45,7 @@ const TITLES = {
   sandboxes: "Sandboxes", mcp: "MCP", secrets: "Secrets", policies: "Policies",
   dashboard: "Dashboard", sessions: "Sessions", agents: "Agents", projects: "Projects",
   artifacts: "Artifacts", schedules: "Schedules", tasks: "Tasks", interactive: "Interactive",
-  evaluate: "Product Evaluation",
+  evaluate: "Product Evaluation", kits: "Kits",
 };
 
 // Register routes
@@ -61,6 +62,7 @@ router.route("schedules", renderSchedules);
 router.route("tasks", renderTasks);
 router.route("interactive", renderInteractive);
 router.route("evaluate", renderEvaluate);
+router.route("kits", ({ id }) => id ? renderKitDetail(id) : renderKits());
 router.setNotFound(() => el("div", { class: "content" }, el("div", { class: "empty" }, "Page not found")));
 
 const app = document.getElementById("app");
