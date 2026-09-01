@@ -24,7 +24,11 @@ export function renderAgents() {
   // ---- Header ----
   wrap.append(el("div", { class: "page-head" },
     el("div", {}, el("h1", {}, "Agents"),
-      el("p", { style: "margin-top:4px" }, `${agents.length} agents configured`)),
+      el("p", { style: "margin-top:4px" }, `${agents.length} agents configured`),
+      el("p", { class: "muted", style: "margin:6px 0 0;font-size:13px;max-width:680px" },
+        "Two teams, one governance model: the agents that ", el("b", {}, "build"),
+        " your software (Development), and the agents that ", el("b", {}, "run inside it"),
+        " (Catalog Intelligence). Both boxed in, tool-brokered, and audited the same way.")),
     el("div", { class: "page-actions" },
       el("button", { class: "btn", onClick: openAddTeam }, icon("users"), "Add team instance"),
       el("button", { class: "btn btn-primary", onClick: () => openCreateAgent() }, icon("plus"), "Create Agent")),

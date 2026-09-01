@@ -69,6 +69,24 @@ export function renderDashboard() {
     "Launch a sandbox with the DHI MCP server and run the agent build to fill the right column. ",
     el("a", { href: "#/sandboxes", onClick: () => navigate("sandboxes") }, "Go to Sandboxes →")));
 
+  // Two kinds of agents, one governance model
+  wrap.append(sectionTitle("Two kinds of agents, one governance model"));
+  const agentCard = (title, tagline, body, tone) => el("div", { class: "card link", onClick: () => navigate("agents"),
+    style: `border-left:3px solid ${tone}` },
+    el("div", { class: "card-title", style: "margin-bottom:4px" }, icon("bot", "ico"), title),
+    el("div", { class: "card-sub", style: "font-weight:600;color:var(--text)" }, tagline),
+    el("p", { class: "muted", style: "margin:8px 0 0;font-size:12.5px" }, body));
+  wrap.append(el("div", { class: "grid", style: "grid-template-columns:1fr 1fr;gap:16px" },
+    agentCard("Development Team", "Agents that BUILD your software",
+      "architect · implementer · orchestrator. Boxed in a microVM, pointed at the DHI MCP server, scoped by the dhi-readonly Cedar policy.", "#2496ED"),
+    agentCard("Catalog Intelligence Team", "Agents that RUN inside your product",
+      "vendor-intake · market-research · customer-match · catalog-management (Llama 3.2 on Docker Model Runner). Tools via the MCP gateway; decisions audited to MongoDB & Kafka.", "#db2777"),
+  ));
+  wrap.append(el("p", { class: "muted", style: "margin-top:10px" },
+    "From ", el("span", { class: "mono" }, "FROM dhi.io/node:24"), " to ", el("span", { class: "mono" }, "APPROVED 87/100"),
+    " — the same platform governs the agents that build your app and the agents that run inside it. ",
+    el("a", { href: "#/agents", onClick: () => navigate("agents") }, "See the teams →")));
+
   // Recent sessions
   wrap.append(sectionTitle("Recent sessions"));
   if (!sessions.length) wrap.append(el("div", { class: "empty" }, "No sessions yet. Run an agent inside a sandbox."));

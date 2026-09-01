@@ -57,5 +57,17 @@ export function renderProjectDetail(id) {
       el("div", { class: "card-sub" }, a.base + " · " + a.size))));
     wrap.append(grid);
   }
+
+  // This product is itself agentic — link the project to its runtime agent team.
+  if (p.id === "proj-catalog") {
+    wrap.append(sectionTitle("This product is itself agentic"));
+    wrap.append(el("div", { class: "card link", onClick: () => navigate("agents"),
+      style: "border-left:3px solid #db2777" },
+      el("div", { class: "card-title", style: "margin-bottom:4px" }, icon("bot", "ico"), "Catalog Intelligence Team"),
+      el("p", { class: "muted", style: "margin:0;font-size:13px" },
+        "catalog-service doesn't just get built by agents — it ", el("b", {}, "runs"),
+        " a multi-agent pipeline that evaluates every product submission: vendor-intake scores it, market-research and customer-match add signal, catalog-management commits the result. Same governance, one layer up. ",
+        el("a", { href: "#/agents", onClick: (e) => { e.stopPropagation(); navigate("agents"); } }, "Meet the team →"))));
+  }
   return wrap;
 }
