@@ -96,3 +96,32 @@ src/
 
 This is an educational simulation of a real product's UI for demos and
 workshops. It ships no Docker code and talks to no Docker service.
+
+
+## Demo
+
+Here's a tight, proven way to present it — a ~7–10 minute narrative that walks the whole platform through one story ("the same agent, two environments"). Everything below maps to actual clicks in your live app.
+
+Before you start (30 sec)
+
+- Open https://agentic-platform.dockerworkshop.com full-screen, browser zoom ~110–125% so the room can read it.
+- Click Demo data → Reset (bottom-left) so you begin from the clean seeded state (empty Sandboxes, baseline artifact present, no :dhi yet).
+
+The walkthrough
+
+1. The hook — sign in (20s)
+
+▎ "This is a simulation of Docker's Agentic Platform — cloud sandboxing with AI governance. Any credentials work."
+
+Click Sign in → lands on Sandboxes, empty. "An agent hasn't done anything yet."
+
+2. The problem — what an unsupervised agent ships (60s)
+Go to Artifacts → catalog-service:baseline.
+
+▎ "An AI agent containerised our Node catalog service on a laptop, unsandboxed. It works — but look: node:20, 431 packages, 8 High / 41 Medium CVEs, unsigned, runs as root. It fails policy. Nobody chose that base image; the agent pattern-matched it."
+
+Point at the red "policy fail" panel. This is your villain.
+
+3. The governance you put in place (75s)
+- MCP → remotedhi: "We register the DHI MCP server — signed, read-only catalog queries. Notice the two mirror-mutator tools are denied."
+- Policies → dhi-readonly: "A Cedar policy enforces exactly that — the agent can read the hardened catalog, not mutate it."
