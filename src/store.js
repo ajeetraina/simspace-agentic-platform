@@ -4,12 +4,12 @@
 // github.com/ajeetraina/simspace-agentic-security so every view has data.
 // ---------------------------------------------------------------------------
 
-const KEY = "dap-sim-state-v3";
+const KEY = "dap-sim-state-v4";
 const SESSION_KEY = "dap-sim-session-v1";
 
 function seed() {
   return {
-    org: "acme-labs",
+    org: "whalecollab",
     // -------------------------------------------------------------------
     // Sandboxes — start empty to mirror the real portal's first-run screen.
     // Creating one runs the Product Catalog build flow.
@@ -202,111 +202,353 @@ rule require-provenance { deny when not image.attestations.provenance }`,
     ],
 
     // -------------------------------------------------------------------
-    // Kits — declarative sbx artifacts (spec.yaml) that compose a sandbox.
-    // `kind: sandbox` = agent environment; `kind: mixin` = layered add-on.
-    // Kits are the reusable *source*; Sandboxes/MCP/Secrets/Policies are the
-    // primitives they wire in.
+    // Kits — declarative sbx artifacts (the v3 kit descriptor) that compose
+    // a sandbox. Each kit is one OCI image; its manifest annotation carries
+    // the descriptor — what the kit `provides`, what it `requires` from other
+    // kits, and the typed `capabilities` it asks the host for. `kind: workload`
+    // owns the environment (exactly one per composition); `kind: mixin` is a
+    // layered overlay (zero or more). Kits are the reusable *source*;
+    // Sandboxes/MCP/Secrets/Policies are the primitives their capabilities
+    // wire in. Mirrors the real v3 kits published at hub.docker.com/u/sbx.
     // -------------------------------------------------------------------
     kits: [
-      { id: "kit-codex", name: "codex", kind: "sandbox", version: "1.4.0", locked: true,
-        source: "oci://docker.io/sbx/codex@sha256:9f2a1c7e", image: "docker.io/sbx/codex-image:latest",
-        desc: "OpenAI Codex CLI agent in an isolated microVM.",
+      { id: "kit-codex", name: "codex", displayName: "Codex", kind: "workload",
+        schemaVersion: "3", version: "0.157.0", locked: true,
+        source: "oci://docker.io/sbx/codex-image:0.157.0", image: "docker.io/sbx/codex-image:latest",
+        sourceUrl: "https://github.com/openai/codex", licenses: ["Apache-2.0"],
+        desc: "OpenAI's Codex CLI as a complete workload — the sandbox-templates base with codex pinned to the published release, the OpenAI credential, scoped egress, and the config/auth seeds the agent needs.",
+        provides: ["codex@0.157.0"], requires: [],
+        capabilities: [
+          { type: "com.docker.sandbox/sbx@1", desc: "Launch this image as the agent (PID 1 is the agent, not the entrypoint)." },
+          { type: "com.docker.sandbox/network-policy@1", desc: "runtime egress → api.openai.com, auth.openai.com, chatgpt.com, registry.npmjs.org, github.com" },
+          { type: "com.docker.sandbox/credential@1", optional: true, desc: "OpenAI API access (API key or ChatGPT OAuth) → OPENAI_API_KEY, proxy-managed" },
+          { type: "com.docker.sandbox/lifecycle@1", desc: "install: seed ~/.codex/config.toml + auth.json; startup: register the MCP gateway" },
+          { type: "com.docker.sandbox/agent-sessions@1", desc: "headless verbs — exec {{.Prompt}} / resume {{.SessionID}}" },
+          { type: "com.docker.sandbox/agent-skills@1", optional: true, desc: "shared skills store at ~/.agents/skills" },
+          { type: "com.docker.sandbox/agent-context@1", desc: "AGENTS.md ← codex-context.md" },
+        ],
         wires: { agent: "codex", credentials: ["OPENAI_API_KEY"] },
-        spec: `schemaVersion: "2"
-kind: sandbox
-name: codex
-sandbox:
-  image: docker.io/sbx/codex-image:latest
-  command: ["codex"]
-agentInstructions:
-  filename: AGENTS.md
-  content: |
-    You are Codex, running inside an isolated sandbox microVM.
-credentials:
-  - service: openai
-    scheme: apiKey
-    env: OPENAI_API_KEY` },
+        spec: `# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+displayName: Codex
+author: "Docker, Inc."
+description: OpenAI's Codex CLI as a complete workload.
+sourceUrl: https://github.com/openai/codex
 
-      { id: "kit-claude", name: "claude", kind: "sandbox", version: "1.6.0", locked: true,
-        source: "oci://docker.io/sbx/claude@sha256:3b1c8d04", image: "docker.io/sbx/claude-image:latest",
-        desc: "Anthropic Claude Code agent — claude -p one-shot and interactive.",
+kind: workload
+
+args:
+  version:
+    default: "0.157.0"
+    pattern: '^[0-9]+\\.[0-9]+\\.[0-9]+$'
+    description: Codex CLI release to install
+    buildArg: CODEX_VERSION
+
+provides: ["codex@\${{ kit.args.version }}"]
+dockerfile: ./codex.dockerfile
+
+capabilities:
+  - type: com.docker.sandbox/sbx@1
+
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - api.openai.com:443
+          - auth.openai.com:443
+          - chatgpt.com:443
+          - registry.npmjs.org:443
+          - github.com:443
+
+  - type: com.docker.sandbox/credential@1
+    optional: true
+    description: OpenAI API access (API key or ChatGPT OAuth)
+    config:
+      service: openai
+      phase: runtime
+      apiKey:
+        name: OPENAI_API_KEY
+        proxyManaged: true
+        inject:
+          - {domain: api.openai.com, header: Authorization, format: "Bearer %s"}
+
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      startup:
+        - command: sbx mcp add mcp-gateway "$MCP_GATEWAY_URL"
+          user: agent
+          env: [MCP_GATEWAY_URL, MCP_SENTINEL_TOKEN_NAME]
+          description: Register the sandbox MCP gateway
+
+  - type: com.docker.sandbox/agent-sessions@1
+    config:
+      prompt: ["exec", "{{.Prompt}}"]
+      resume: ["resume", "{{.SessionID}}"]
+
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      filename: AGENTS.md
+      contentFile: ./codex-context.md` },
+
+      { id: "kit-claude", name: "claude", displayName: "Claude Code", kind: "workload",
+        schemaVersion: "3", version: "2.1.282", locked: true,
+        source: "oci://docker.io/sbx/claude-image:2.1.282", image: "docker.io/sbx/claude-image:latest",
+        sourceUrl: "https://github.com/anthropics/claude-code", licenses: ["Apache-2.0"],
+        desc: "Anthropic's Claude Code CLI as a workload — the native binary, the Anthropic credential (API key or claude.ai OAuth), session-state volumes, and the hooks the agent needs.",
+        provides: ["claude@2.1.282"], requires: [],
+        capabilities: [
+          { type: "com.docker.sandbox/sbx@1", desc: "Launch this image as the agent." },
+          { type: "com.docker.sandbox/network-policy@1", desc: "runtime egress → api.anthropic.com, platform.claude.com, claude.com" },
+          { type: "com.docker.sandbox/credential@1", optional: true, desc: "Anthropic API access (API key or claude.ai OAuth) → ANTHROPIC_API_KEY" },
+          { type: "com.docker.sandbox/volume@1", desc: "persistent session state — ~/.claude/projects (2g), sessions, todos, shell-snapshots, statsig" },
+          { type: "com.docker.sandbox/lifecycle@1", desc: "install: seed ~/.claude.json + settings.json, register MCP gateway" },
+          { type: "com.docker.sandbox/agent-skills@1", optional: true, desc: "shared skills store at ~/.claude/skills" },
+          { type: "com.docker.sandbox/agent-context@1", desc: "CLAUDE.md ← claude-context.md" },
+        ],
         wires: { agent: "claude", credentials: ["ANTHROPIC_API_KEY"] },
-        spec: `schemaVersion: "2"
-kind: sandbox
-name: claude
-sandbox:
-  image: docker.io/sbx/claude-image:latest
-  command: ["claude"]
-credentials:
-  - service: anthropic
-    scheme: apiKey
-    env: ANTHROPIC_API_KEY` },
+        spec: `# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+displayName: Claude Code
+author: "Docker, Inc."
+description: Anthropic's Claude Code CLI as a workload.
+sourceUrl: https://github.com/anthropics/claude-code
 
-      { id: "kit-dhi", name: "dhi-mcp", kind: "mixin", version: "2.1.0", locked: true,
-        source: "oci://docker.io/sbx/dhi-mcp@sha256:7e4b9a1f",
-        desc: "Wires the Docker Hardened Images MCP server, scopes it with the dhi-readonly Cedar policy, and injects the DHI token.",
+kind: workload
+
+args:
+  version:
+    default: "2.1.282"
+    pattern: '^[0-9]+\\.[0-9]+\\.[0-9]+$'
+    description: Claude Code release to install
+    buildArg: CLAUDE_VERSION
+
+provides: ["claude@\${{ kit.args.version }}"]
+dockerfile: ./claude.dockerfile
+
+capabilities:
+  - type: com.docker.sandbox/sbx@1
+
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - api.anthropic.com:443
+          - platform.claude.com:443
+          - claude.com:443
+
+  - type: com.docker.sandbox/credential@1
+    optional: true
+    description: Anthropic API access (API key or claude.ai OAuth)
+    config:
+      service: anthropic
+      phase: runtime
+      apiKey:
+        name: ANTHROPIC_API_KEY
+        inject:
+          - {domain: api.anthropic.com, header: x-api-key, format: "%s"}
+
+  # Session state persists across container recreation. Every kit volume
+  # sets a size — sbx formats an unsized volume at 512 MiB.
+  - type: com.docker.sandbox/volume@1
+    description: Conversation history; grows without bound
+    config: {path: /home/agent/.claude/projects, size: 2g}
+
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      filename: CLAUDE.md
+      contentFile: ./claude-context.md` },
+
+      { id: "kit-dhi", name: "dhi-mcp", displayName: "Docker Hardened Images MCP", kind: "mixin",
+        schemaVersion: "3", version: "2.1.0", locked: true,
+        source: "oci://docker.io/sbx/dhi-mcp:2.1.0",
+        sourceUrl: "https://github.com/ajeetraina/sbx-kits", licenses: ["Apache-2.0"],
+        desc: "Wires the Docker Hardened Images MCP server, scopes it with the dhi-readonly Cedar policy, and injects the DHI token. Layer it onto any agent workload.",
+        provides: ["dhi-mcp@2.1.0"], requires: [],
+        capabilities: [
+          { type: "com.docker.sandbox/network-policy@1", desc: "runtime egress → dhi.io, gateway.docker.com" },
+          { type: "com.docker.sandbox/credential@1", desc: "DHI registry token → DHI_TOKEN, proxy-managed" },
+          { type: "com.docker.sandbox/lifecycle@1", desc: "startup: sbx mcp add remotedhi --url https://dhi.io/mcp" },
+          { type: "com.docker.sandbox/agent-context@1", desc: "how to query the hardened-image catalog before writing FROM" },
+        ],
         wires: { mcp: ["remotedhi"], policy: "dhi-readonly", credentials: ["DHI_TOKEN"], network: ["dhi.io", "gateway.docker.com"] },
-        spec: `schemaVersion: "2"
-kind: mixin
-name: dhi-mcp
-permissions:
-  network:
-    allow:
-      - dhi.io
-      - gateway.docker.com
-credentials:
-  - service: dhi
-    scheme: apiKey
-    env: DHI_TOKEN
-environment:
-  SBX_MCP_PROFILE: dhi-readonly     # Cedar policy: read-only DHI tools
-setup:
-  startup:
-    - sbx mcp add remotedhi --url https://dhi.io/mcp` },
+        spec: `# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+displayName: Docker Hardened Images MCP
+description: Wires the DHI MCP server, scoped read-only by Cedar policy.
+sourceUrl: https://github.com/ajeetraina/sbx-kits
+licenses: [Apache-2.0]
 
-      { id: "kit-node", name: "node-toolchain", kind: "mixin", version: "1.2.3", locked: true,
-        source: "git+https://github.com/sbx-kits/node-toolchain#a9d0e42",
-        desc: "Installs Node.js 20 + npm and common build tooling into the sandbox.",
+kind: mixin
+version: "2.1.0"
+provides: ["dhi-mcp@2.1.0"]
+
+capabilities:
+  # v2 permissions.network.allow → network-policy@1 (host-only, so @1).
+  # Phase-scoped: only the running agent reaches these, so runtime alone.
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - dhi.io:443
+          - gateway.docker.com:443
+
+  # v2 credentials[] → credential@1. Injected at dhi.io by the proxy;
+  # the agent only ever sees a sentinel.
+  - type: com.docker.sandbox/credential@1
+    description: DHI registry token
+    config:
+      service: dhi
+      phase: runtime
+      apiKey:
+        name: DHI_TOKEN
+        proxyManaged: true
+        inject:
+          - {domain: dhi.io, header: Authorization, format: "Bearer %s"}
+
+  # v2 environment.SBX_MCP_PROFILE has no descriptor field — it rides the
+  # overlay's recipe as ENV SBX_MCP_PROFILE=dhi-readonly, selecting the
+  # read-only Cedar profile. v2 setup.startup → lifecycle@1 startup hook.
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      startup:
+        - command: sbx mcp add remotedhi --url https://dhi.io/mcp
+          user: agent
+          description: Register the read-only DHI MCP server
+
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      contentFile: ./dhi-context.md` },
+
+      { id: "kit-node", name: "node-toolchain", displayName: "Node.js Toolchain", kind: "mixin",
+        schemaVersion: "3", version: "20.11.1", locked: true,
+        source: "oci://docker.io/sbx/node-toolchain:20.11.1",
+        sourceUrl: "https://github.com/ajeetraina/sbx-kits", licenses: ["MIT"],
+        desc: "Installs Node.js 20 + npm and common build tooling into the sandbox at compose time.",
+        provides: ["node@20.11.1"], requires: [],
+        capabilities: [
+          { type: "com.docker.sandbox/network-policy@1", desc: "install egress → deb.debian.org, registry.npmjs.org (closes before the agent starts)" },
+          { type: "com.docker.sandbox/lifecycle@1", desc: "install: apt-get install nodejs npm; files: /etc/npmrc" },
+        ],
         wires: { setup: ["node20", "npm"] },
-        spec: `schemaVersion: "2"
-kind: mixin
-name: node-toolchain
-setup:
-  install:
-    - apt-get update && apt-get install -y nodejs npm
-  files:
-    - path: /etc/npmrc
-      content: "audit=false"` },
+        spec: `# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+displayName: Node.js Toolchain
+description: Node.js 20 + npm, installed at compose time.
+sourceUrl: https://github.com/ajeetraina/sbx-kits
+licenses: [MIT]
 
-      { id: "kit-registry", name: "docker-build", kind: "mixin", version: "1.3.0", locked: true,
-        source: "oci://docker.io/sbx/docker-build@sha256:5c6d0e2a",
+kind: mixin
+version: "20.11.1"
+provides: ["node@20.11.1"]
+
+# No requires: the install hook probes and fails with an actionable
+# message on a base without apt, rather than refusing to compose.
+
+capabilities:
+  # v2 setup.install pulled from apt/npm — that egress is reached only by
+  # the install hooks, so it goes in the install phase and closes before
+  # the agent starts. An absent runtime phase grants the agent nothing.
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      install:
+        allow:
+          - deb.debian.org
+          - registry.npmjs.org
+
+  # v2 setup.install + setup.files → lifecycle@1. Hook environments are
+  # deny-by-default: HTTP(S)_PROXY are declared because apt fetches through
+  # the sandbox's forced proxy.
+  - type: com.docker.sandbox/lifecycle@1
+    config:
+      install:
+        - command: apt-get update && apt-get install -y nodejs npm
+          user: "0"
+          env: [HTTP_PROXY, HTTPS_PROXY]
+          description: Install Node.js 20 + npm
+      files:
+        - path: /etc/npmrc
+          mode: "0644"
+          overwrite: false
+          content: "audit=false"` },
+
+      { id: "kit-registry", name: "docker-build", displayName: "Docker Build", kind: "mixin",
+        schemaVersion: "3", version: "1.3.0", locked: true,
+        source: "oci://docker.io/sbx/docker-build:1.3.0",
+        sourceUrl: "https://github.com/ajeetraina/sbx-kits", licenses: ["Apache-2.0"],
         desc: "Sandboxed Docker daemon plus push access to the internal registry.",
+        provides: ["docker-build@1.3.0"], requires: [],
+        capabilities: [
+          { type: "com.docker.sandbox/network-policy@1", desc: "runtime egress → registry.dockerlabs.xyz" },
+          { type: "com.docker.sandbox/credential@1", desc: "registry push credential → REGISTRY_PASSWORD" },
+          { type: "com.docker.sandbox/port@1", desc: "expose the in-sandbox daemon on tcp/2375" },
+        ],
         wires: { credentials: ["REGISTRY_PASSWORD"], network: ["registry.dockerlabs.xyz"], ports: [2375] },
-        spec: `schemaVersion: "2"
-kind: mixin
-name: docker-build
-permissions:
-  network:
-    allow:
-      - registry.dockerlabs.xyz
-ports:
-  - 2375
-credentials:
-  - service: registry
-    scheme: apiKey
-    env: REGISTRY_PASSWORD` },
+        spec: `# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+displayName: Docker Build
+description: Sandboxed Docker daemon + internal registry push access.
+sourceUrl: https://github.com/ajeetraina/sbx-kits
+licenses: [Apache-2.0]
 
-      { id: "kit-denyall", name: "deny-all-net", kind: "mixin", version: "1.0.1", locked: true,
-        source: "oci://docker.io/sbx/deny-all-net@sha256:1a2b3c4d",
-        desc: "Zero-egress baseline: denies all network so every allow rule must be added explicitly by another kit.",
-        wires: { network: ["(deny all)"] },
-        spec: `schemaVersion: "2"
 kind: mixin
-name: deny-all-net
-permissions:
-  network:
-    default: deny
-    allow: []` },
+version: "1.3.0"
+provides: ["docker-build@1.3.0"]
+
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - registry.dockerlabs.xyz:443
+
+  - type: com.docker.sandbox/credential@1
+    description: Internal registry push credential
+    config:
+      service: registry
+      phase: runtime
+      apiKey:
+        name: REGISTRY_PASSWORD
+        proxyManaged: true
+        inject:
+          - {domain: registry.dockerlabs.xyz, header: Authorization, format: "Bearer %s"}
+
+  # v2 ports[] → port@1.
+  - type: com.docker.sandbox/port@1
+    config:
+      port: 2375
+      description: In-sandbox Docker daemon` },
+
+      { id: "kit-denyall", name: "deny-all-net", displayName: "Deny All Network", kind: "mixin",
+        schemaVersion: "3", version: "1.0.1", locked: true,
+        source: "oci://docker.io/sbx/deny-all-net:1.0.1",
+        sourceUrl: "https://github.com/ajeetraina/sbx-kits", licenses: ["Apache-2.0"],
+        desc: "Zero-egress baseline. In v3 the network is already deny-by-default and each phase absent grants nothing — this declaration-only mixin documents and pins that posture so every allow must be added explicitly by another kit.",
+        provides: [], requires: [],
+        capabilities: [
+          { type: "com.docker.sandbox/network-policy@1", desc: "empty install + runtime allow-lists — grants nothing, so egress stays denied" },
+        ],
+        wires: { network: ["(deny all)"] },
+        spec: `# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+displayName: Deny All Network
+description: Zero-egress baseline — pins the deny-by-default posture.
+sourceUrl: https://github.com/ajeetraina/sbx-kits
+licenses: [Apache-2.0]
+
+kind: mixin
+version: "1.0.1"
+
+# Declaration-only: no dockerfile, no content. v3 network egress is
+# deny-by-default and phase-scoped — an absent phase grants nothing — so
+# empty allow-lists are the whole point. Every host another kit needs must
+# be named by that kit, in the phase that reaches it.
+capabilities:
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      install:
+        allow: []
+      runtime:
+        allow: []` },
     ],
 
     // -------------------------------------------------------------------

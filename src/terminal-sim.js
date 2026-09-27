@@ -312,7 +312,11 @@ function sbxKit(parts) {
   if (action === "inspect") {
     const k = kits.find((x) => x.name === parts[3]);
     if (!k) return { lines: [err("kit not found: " + (parts[3] || "")), dim("List them: sbx kit ls")] };
-    return { lines: [dim(`# ${k.source}`), ...k.spec.split("\n").map((t) => L(t))] };
+    return { lines: [
+      dim(`# ${k.source}`),
+      dim(`# provides: ${(k.provides && k.provides.length) ? k.provides.join(", ") : "(none)"}  ·  requires: ${(k.requires && k.requires.length) ? k.requires.join(", ") : "(none)"}`),
+      ...k.spec.split("\n").map((t) => L(t)),
+    ] };
   }
   if (action === "add") {
     const k = kits.find((x) => x.name === parts[3]);
@@ -331,7 +335,7 @@ function sbxKit(parts) {
   if (action === "push" || action === "pull") {
     return { lines: [ok(`${action === "push" ? "Pushed" : "Pulled"} kit ${parts[3] || ""} — pinned by digest.`)] };
   }
-  if (action === "validate") return { lines: [ok("spec.yaml is valid (schemaVersion \"2\").")] };
+  if (action === "validate") return { lines: [ok("kit descriptor is valid (schemaVersion \"3\") — capabilities resolved, provides/requires satisfied.")] };
   return { lines: [err("usage: sbx kit ls | inspect <name> | add <name> | validate | push | pull")] };
 }
 

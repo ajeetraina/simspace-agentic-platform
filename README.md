@@ -77,11 +77,16 @@ See **[DEMO.md](DEMO.md)** for a click-by-click, ~7–10 min presenter script.
 Two experiences live off-nav (reachable by button/link, like the real product's
 CLI/declarative layers):
 
-- **Kits** (`#/kits`) — declarative sbx artifacts (`spec.yaml`): `kind: sandbox`
-  agent kits + `kind: mixin` add-ons (`dhi-mcp`, `node-toolchain`, `docker-build`,
-  `deny-all-net`). Shows how a kit **composes** the Sandbox / MCP / Secrets / Policy
-  primitives. "Compose from kits" is wired into **New sandbox**, and the sandbox's
-  `.sbxenv.yaml` renders the resulting `kit:` + `mixins:`.
+- **Kits** (`#/kits`) — declarative sbx artifacts on the **v3 kit descriptor**
+  (`schemaVersion: "3"`): each kit is an OCI image whose manifest declares what it
+  `provides`, what it `requires`, and the typed `capabilities` it requests
+  (`com.docker.sandbox/sbx@1`, `network-policy@1`, `credential@1`, `lifecycle@1`,
+  `volume@1`, `agent-context@1`, …). `kind: workload` agent kits (`codex`, `claude`)
+  + `kind: mixin` overlays (`dhi-mcp`, `node-toolchain`, `docker-build`,
+  `deny-all-net`). Shows how a kit's capabilities **compose** the Sandbox / MCP /
+  Secrets / Policy primitives. "Compose from kits" is wired into **New sandbox**, and
+  the sandbox's `.sbxenv.yaml` renders the resulting `kit:` + `mixins:`. Mirrors the
+  real kits published at [hub.docker.com/u/sbx](https://hub.docker.com/u/sbx).
 - **Product Evaluation** (`#/evaluate`) — submit a product, watch the Catalog
   Intelligence agents score it live.
 

@@ -85,7 +85,7 @@ export function openNewSandbox(preselect, presetKits) {
 
   const body = el("div", {},
     field("Name", name),
-    field("Agent (sandbox kit)", agentSel, "The coding agent that runs inside the microVM — its sandbox kit."),
+    field("Agent (workload kit)", agentSel, "The coding agent that runs inside the microVM — its workload kit owns the environment."),
     field("Workspace (project)", projectSel, "Cloned read-write into the sandbox; your host stays read-only."),
     field(
       el("span", {}, "Compose from kits (mixins) ", el("a", { href: "#/kits", style: "font-weight:400", onClick: (e) => { e.preventDefault(); navigate("kits"); } }, "browse all →")),
@@ -210,10 +210,10 @@ function sbxEnvFile(s) {
   const mixins = (s.kits && s.kits.length)
     ? "\n" + s.kits.map((k) => `  - ${k}`).join("\n")
     : " []";
-  return `schemaVersion: "2"
+  return `schemaVersion: "3"
 name: ${s.name}
 
-# Base sandbox kit (the agent) + composed mixin kits.
+# Workload kit (the agent environment) + composed mixin kits.
 kit: ${s.agent}
 mixins:${mixins}
 
